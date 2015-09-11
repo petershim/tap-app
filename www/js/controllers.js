@@ -214,6 +214,13 @@ angular.module('tapApp.controllers', [])
       }
     });
   };
+})
+.controller('MapCtrl', function($scope){
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat: -34.397, lng: 150.644},
+    zoom: 8
+  });
+  console.log(map);
 });
 
 function escapeEmailAddress(email) {
