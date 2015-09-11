@@ -101,7 +101,7 @@ angular.module('tapApp', ['ionic', 'firebase', 'tapApp.controllers'])
       views: {
         'map-list': {
           templateUrl: 'templates/map-list.html',
-          controller: 'myListCtrl'
+          controller: 'MapCtrl'
         }
       }
     })
