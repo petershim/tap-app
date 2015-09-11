@@ -215,12 +215,121 @@ angular.module('tapApp.controllers', [])
     });
   };
 })
-.controller('MapCtrl', function($scope){
+.controller('MapCtrl', function($scope, $rootScope, $firebase, $ionicModal){
   map = new google.maps.Map(document.getElementById('map'), {
-    center: {lat: -34.397, lng: 150.644},
+    center: {lat: 34.0130987, lng: -118.495067},
     zoom: 8
   });
-  console.log(map);
+  console.log('map initialized');
+  //DB stuff
+  var bucketListRef = new Firebase($rootScope.baseUrl + escapeEmailAddress($rootScope.userEmail));
+  bucketListRef.on('value', function(snapshot) {
+    var data = snapshot.val();
+
+    $scope.list = [];
+    console.log($scope.list);
+    //Data stuff for lists
+    for (var key in data) {
+      if (data.hasOwnProperty(key)) {
+        if (data[key].isCompleted == false) {
+          data[key].key = key;
+          $scope.list.push(data[key]);
+        }
+      }
+    }
+
+    if ($scope.list.length == 0) {
+      $scope.noData = true;
+    } else {
+      $scope.noData = false;
+    }
+    $rootScope.hide();
+  });
+  //Modal New Item
+  $ionicModal.fromTemplateUrl('templates/newItem.html', function(modal) {
+    $scope.newTemplate = modal;
+  });
+
+  $scope.newTask = function() {
+    $scope.newTemplate.show();
+  };
+  //--------------
+
+
+
+  var infoWindow = new google.maps.InfoWindow({map: map});
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(position){
+      var pos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      map.setCenter(pos);
+
+      var marker1 = new google.maps.Marker({
+        position: pos,
+        map: map
+      });
+      marker1.addListener('click', function(){
+        var infoWindow1 = new google.maps.InfoWindow({
+          map: map,
+          content: 'This is you!<br>Your Network is: WifiForEveryone<br>Connections Today: 2<br>Daily Total: $2.00<br>Network Strength: 111.13 mbps'
+        });
+        infoWindow1.open(map, marker1);
+
+      });
+
+    })
+  }
+
+  map.addListener('click', function(evt){
+    placeMarkerAndPanTo(evt.latLng, map);
+
+  });
+
+  function placeMarkerAndPanTo(latLng, map){
+    var marker = new google.maps.Marker({
+      position: latLng,
+      map: map
+    });
+    map.panTo(latLng);
+
+    marker.addListener('click', function(){
+      infoWindow.open(map, marker);
+      this.setPosition(this.getPosition());
+    });
+
+    var infoWindow = new google.maps.InfoWindow({
+      map: map,
+      content: '<input type="text" id="network">Add network</input><br><input type="text" id="password">Add Password</input><br><button>save</button>'
+    });
+
+    google.maps.event.addListener(infoWindow, 'domready', function() {
+      $('button').on('click', function(evt){
+        var parent = $(evt.target).parent();
+        var networkName = $(parent).find('#network').val();
+        console.log(networkName);
+        var passwordName = $(parent).find('#password').val();
+        console.log(passwordName);
+        form = {
+          item: [networkName, passwordName],
+          isCompleted: false,
+          created: Date.now(),
+          updated: Date.now()
+        };
+        $firebase(bucketListRef).$add(form);
+        $rootScope.hide();
+      });
+    });
+
+  }
+
+  // function windowContent(){
+  //   infoWindow.setContent('<div id="network" contentEditable="true">Add network..</div><br><div id="password" contentEditable="true">Add password..</div><br><button onclick="saveLocation()">Submit</button>')
+  // }
+
 });
 
 function escapeEmailAddress(email) {
